@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import os
 
 # ==============================
 # PAGE CONFIG
@@ -22,6 +23,9 @@ def load_data():
     return df_transaction, df_user, df_map_trans, df_map_user, df_top_trans
 
 df_transaction, df_user, df_map_trans, df_map_user, df_top_trans = load_data()
+
+# DEBUG: Print available files in data directory
+st.write("📂 Available files in data directory:", os.listdir("data"))
 
 # ==============================
 # SIDEBAR FILTERS
@@ -46,7 +50,7 @@ if state != "All":
 
 # ==============================
 # KPI SECTION
-# ==============================
+# ============================== 
 total_amount = int(df_filtered["transaction_amount"].sum())
 total_count = int(df_filtered["transaction_count"].sum())
 
@@ -110,6 +114,7 @@ df_map_filtered = df_map_trans[df_map_trans["year"] == year]
 
 if state != "All":
     df_map_filtered = df_map_filtered[df_map_filtered["state"] == state]
+
 
 df_district = (
     df_map_filtered.groupby("district")["transaction_amount"]
