@@ -108,6 +108,10 @@ st.markdown("---")
 # INDIA MAP (Plotly)
 # ==============================
 st.subheader("🗺️ India Transaction Heatmap")
+import json
+
+with open("india_states.geojson") as f:
+    geojson = json.load(f)
 
 import json
 import requests
