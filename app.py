@@ -105,11 +105,17 @@ st.info(f"""
 st.markdown("---")
 
 # ==============================
-# INDIA MAP (PLOTLY)
+# INDIA MAP (Plotly)
 # ==============================
 st.subheader("🗺️ India Transaction Heatmap")
 
 state_data = df_filtered.groupby("state")["transaction_amount"].sum().reset_index()
+
+# FIX STATE NAMES (CRITICAL)
+state_data["state"] = state_data["state"].replace({
+    "Andaman & Nicobar Islands": "Andaman and Nicobar Islands",
+    "Dadra & Nagar Haveli & Daman & Diu": "Dadra and Nagar Haveli and Daman and Diu"
+})
 
 fig = px.choropleth(
     state_data,
@@ -121,9 +127,8 @@ fig = px.choropleth(
 )
 
 fig.update_geos(fitbounds="locations", visible=False)
-st.plotly_chart(fig, use_container_width=True)
 
-st.markdown("---")
+st.plotly_chart(fig, use_container_width=True)
 
 # ==============================
 # TOP STATES + CATEGORY
