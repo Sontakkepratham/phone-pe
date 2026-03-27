@@ -113,11 +113,6 @@ import json
 with open("india_states.geojson") as f:
     geojson = json.load(f)
 
-import json
-
-with open("india_states.geojson") as f:
-    geojson = json.load(f)
-
 state_data = df_filtered.groupby("state")["transaction_amount"].sum().reset_index()
 
 state_data["state"] = state_data["state"].str.replace("-", " ").str.title()
