@@ -109,68 +109,37 @@ st.markdown("---")
 # ==============================
 st.subheader("🗺️ India Transaction Heatmap")
 
+import json
+import requests
+
+# Load GeoJSON properly
+geojson_url = "https://raw.githubusercontent.com/plotly/datasets/master/india_states.geojson"
+geojson = requests.get(geojson_url).json()
+
 state_data = df_filtered.groupby("state")["transaction_amount"].sum().reset_index()
 
-# Normalize state names
+# CLEAN STATE NAMES (CRITICAL)
 state_data["state"] = state_data["state"].str.replace("-", " ").str.title()
 
-# IMPORTANT: mapping names to ISO codes (required for Plotly)
-state_code_map = {
-    "Andaman & Nicobar Islands": "AN",
-    "Andhra Pradesh": "AP",
-    "Arunachal Pradesh": "AR",
-    "Assam": "AS",
-    "Bihar": "BR",
-    "Chandigarh": "CH",
-    "Chhattisgarh": "CT",
-    "Dadra And Nagar Haveli And Daman And Diu": "DN",
-    "Delhi": "DL",
-    "Goa": "GA",
-    "Gujarat": "GJ",
-    "Haryana": "HR",
-    "Himachal Pradesh": "HP",
-    "Jammu & Kashmir": "JK",
-    "Jharkhand": "JH",
-    "Karnataka": "KA",
-    "Kerala": "KL",
-    "Ladakh": "LA",
-    "Lakshadweep": "LD",
-    "Madhya Pradesh": "MP",
-    "Maharashtra": "MH",
-    "Manipur": "MN",
-    "Meghalaya": "ML",
-    "Mizoram": "MZ",
-    "Nagaland": "NL",
-    "Odisha": "OR",
-    "Puducherry": "PY",
-    "Punjab": "PB",
-    "Rajasthan": "RJ",
-    "Sikkim": "SK",
-    "Tamil Nadu": "TN",
-    "Telangana": "TG",
-    "Tripura": "TR",
-    "Uttar Pradesh": "UP",
-    "Uttarakhand": "UT",
-    "West Bengal": "WB"
-}
-
-# Map state names to codes
-state_data["code"] = state_data["state"].map(state_code_map)
-
-# Drop missing mappings
-state_data = state_data.dropna()
+# FIX COMMON MISMATCHES
+state_data["state"] = state_data["state"].replace({
+    "Andaman & Nicobar Islands": "Andaman and Nicobar Islands",
+    "Dadra & Nagar Haveli & Daman & Diu": "Dadra and Nagar Haveli and Daman and Diu",
+    "Delhi": "Nct Of Delhi"
+})
 
 fig = px.choropleth(
     state_data,
-    locations="code",
-    locationmode="IN-states",
+    geojson=geojson,
+    featureidkey="properties.ST_NM",
+    locations="state",
     color="transaction_amount",
-    color_continuous_scale="Reds",
-    title="India Transaction Heatmap"
+    color_continuous_scale="Reds"
 )
 
-st.plotly_chart(fig, use_container_width=True)
-# ==============================
+fig.update_geos(fitbounds="locations", visible=False)
+
+st.plotly_chart(fig, use_container_width=True)# ==============================
 # TOP STATES + CATEGORY
 # ==============================
 col1, col2 = st.columns(2)
