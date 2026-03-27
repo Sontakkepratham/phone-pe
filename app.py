@@ -114,12 +114,6 @@ with open("india_states.geojson") as f:
     geojson = json.load(f)
 
 import json
-import requests
-
-# Load GeoJSON properly
-geojson_url = "https://raw.githubusercontent.com/plotly/datasets/master/india_states.geojson"
-geojson = requests.get(geojson_url).json()
-
 state_data = df_filtered.groupby("state")["transaction_amount"].sum().reset_index()
 
 # CLEAN STATE NAMES (CRITICAL)
