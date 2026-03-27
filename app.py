@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 
 # ==============================
 # PAGE CONFIG
@@ -19,10 +20,9 @@ def load_data():
     df_user = pd.read_csv("data/aggregated_user.csv")
     df_map_trans = pd.read_csv("data/map_transaction.csv")
     df_map_user = pd.read_csv("data/map_user.csv")
-    df_top_trans = pd.read_csv("data/top_transaction.csv")
-    return df_transaction, df_user, df_map_trans, df_map_user, df_top_trans
+    return df_transaction, df_user, df_map_trans, df_map_user
 
-df_transaction, df_user, df_map_trans, df_map_user, df_top_trans = load_data()
+df_transaction, df_user, df_map_trans, df_map_user = load_data()
 
 # ==============================
 # SIDEBAR
@@ -51,7 +51,12 @@ if state != "All":
 # HEADER
 # ==============================
 st.title("📊 PhonePe Transaction Insights Dashboard")
-st.markdown("### 🚀 Turning Data into Business Decisions")
+
+st.markdown("""
+## 🚀 Where is India spending digitally?
+
+This dashboard uncovers transaction trends, regional performance, and growth opportunities across India.
+""")
 
 st.markdown("---")
 
@@ -61,12 +66,7 @@ st.markdown("---")
 total_amount = int(df_filtered["transaction_amount"].sum())
 total_count = int(df_filtered["transaction_count"].sum())
 
-df_year = (
-    df_transaction.groupby("year")["transaction_amount"]
-    .sum()
-    .sort_index()
-)
-
+df_year = df_transaction.groupby("year")["transaction_amount"].sum().sort_index()
 growth = df_year.pct_change().iloc[-1] * 100
 
 col1, col2, col3 = st.columns(3)
@@ -78,16 +78,50 @@ col3.metric("📈 Growth Rate", f"{growth:.2f}%")
 st.markdown("---")
 
 # ==============================
-# INSIGHTS PANEL
+# TOP STATES
+# ==============================
+df_top_states = (
+    df_filtered.groupby("state")["transaction_amount"]
+    .sum()
+    .sort_values(ascending=False)
+)
+
+top_state = df_top_states.index[0]
+top_value = int(df_top_states.iloc[0])
+
+st.success(f"🏆 {top_state} is the top-performing state in {year} with ₹{top_value:,}")
+
+# ==============================
+# DYNAMIC INSIGHTS
 # ==============================
 st.subheader("🧠 Key Insights")
 
-st.info("""
-- A small number of states dominate total transaction volume → high market concentration  
-- Digital payment growth is consistently rising → strong adoption trend  
-- Transactions are increasing faster than users → higher engagement per user  
-- Several districts remain underpenetrated → expansion opportunity  
+st.info(f"""
+- {top_state} leads transactions with ₹{top_value:,}, indicating strong digital adoption  
+- Overall transaction growth is increasing → expanding market  
+- Lower-performing states present expansion opportunities  
 """)
+
+st.markdown("---")
+
+# ==============================
+# INDIA MAP (PLOTLY)
+# ==============================
+st.subheader("🗺️ India Transaction Heatmap")
+
+state_data = df_filtered.groupby("state")["transaction_amount"].sum().reset_index()
+
+fig = px.choropleth(
+    state_data,
+    geojson="https://raw.githubusercontent.com/geohacker/india/master/state/india_telengana.geojson",
+    featureidkey="properties.ST_NM",
+    locations="state",
+    color="transaction_amount",
+    color_continuous_scale="Reds"
+)
+
+fig.update_geos(fitbounds="locations", visible=False)
+st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("---")
 
@@ -98,25 +132,15 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("🏆 Top States")
-
-    df_top_states = (
-        df_filtered.groupby("state")["transaction_amount"]
-        .sum()
-        .sort_values(ascending=False)
-        .head(10)
-    )
-
-    st.bar_chart(df_top_states)
+    st.bar_chart(df_top_states.head(10))
 
 with col2:
     st.subheader("💳 Category Distribution")
-
     df_category = (
         df_filtered.groupby("transaction_type")["transaction_amount"]
         .sum()
         .sort_values(ascending=False)
     )
-
     st.bar_chart(df_category)
 
 st.markdown("---")
@@ -124,8 +148,7 @@ st.markdown("---")
 # ==============================
 # YEARLY TREND
 # ==============================
-st.subheader("📈 Yearly Growth Trend")
-
+st.subheader("📈 Growth Trend")
 st.line_chart(df_year)
 
 st.markdown("---")
@@ -159,8 +182,6 @@ if state != "All":
 
     state_data = df_transaction[df_transaction["state"] == state]
 
-    st.write("Top Categories in this State:")
-
     st.bar_chart(
         state_data.groupby("transaction_type")["transaction_amount"].sum()
     )
@@ -170,14 +191,9 @@ if state != "All":
 # ==============================
 # USER GROWTH
 # ==============================
-st.subheader("👥 User Growth Trend")
+st.subheader("👥 User Growth")
 
-df_user_growth = (
-    df_map_user.groupby("year")["user_count"]
-    .sum()
-    .sort_index()
-)
-
+df_user_growth = df_map_user.groupby("year")["user_count"].sum().sort_index()
 st.line_chart(df_user_growth)
 
 st.markdown("---")
@@ -188,22 +204,24 @@ st.markdown("---")
 st.subheader("📊 State Rankings")
 
 ranking = (
-    df_filtered.groupby("state")["transaction_amount"]
-    .sum()
-    .sort_values(ascending=False)
-    .reset_index()
+    df_top_states.reset_index()
 )
 
 st.dataframe(ranking, use_container_width=True)
 
-# ==============================
-# FOOTER
-# ==============================
 st.markdown("---")
-st.markdown("### 📌 Conclusion")
-st.markdown("""
-This dashboard highlights how digital payments are evolving across India.  
-It enables decision-makers to identify high-performing regions, growth trends, and expansion opportunities.
+
+# ==============================
+# DECISION SECTION
+# ==============================
+st.subheader("📌 What Should PhonePe Do?")
+
+st.write(f"""
+- Strengthen presence in **{top_state}** for retention and monetization  
+- Expand aggressively in lower-performing states  
+- Focus on high-performing transaction categories  
+- Leverage growth momentum to introduce new financial products  
 """)
 
+st.markdown("---")
 st.markdown("Built with ❤️ using Streamlit")
