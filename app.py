@@ -114,6 +114,28 @@ with open("india_states.geojson") as f:
     geojson = json.load(f)
 
 import json
+
+with open("india_states.geojson") as f:
+    geojson = json.load(f)
+
+state_data = df_filtered.groupby("state")["transaction_amount"].sum().reset_index()
+
+state_data["state"] = state_data["state"].str.replace("-", " ").str.title()
+
+fig = px.choropleth(
+    state_data,
+    geojson=geojson,
+    featureidkey="properties.ST_NM",
+    locations="state",
+    color="transaction_amount",
+    color_continuous_scale="Reds"
+)
+
+fig.update_geos(fitbounds="locations", visible=False)
+
+st.plotly_chart(fig, use_container_width=True)
+
+import json
 state_data = df_filtered.groupby("state")["transaction_amount"].sum().reset_index()
 
 # CLEAN STATE NAMES (CRITICAL)
